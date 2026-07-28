@@ -1,4 +1,4 @@
-export type Category = "town" | "term" | "item";
+export type Category = "town" | "term" | "item" | "pokemon";
 
 export interface TermEntry {
   id: number;
@@ -14,6 +14,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   town: "地名",
   term: "用語",
   item: "どうぐ",
+  pokemon: "ポケモン",
 };
 
 export interface GuideSection {

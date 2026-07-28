@@ -4,6 +4,7 @@ const DATA_FILES: Record<Category, string> = {
   town: "data/towns.json",
   term: "data/terms.json",
   item: "data/items.json",
+  pokemon: "data/pokemon.json",
 };
 
 let index: SearchResult[] | null = null;

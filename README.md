@@ -25,9 +25,10 @@ Pokémon Echoの制作者、株式会社ポケモン、任天堂、Game Freakと
 | `towns.json` | `town` | 地名 | 30件 |
 | `terms.json` | `term` | 用語 | 28件 |
 | `items.json` | `item` | どうぐ | 0件（未登録） |
+| `pokemon.json` | `pokemon` | ポケモン | 220件 |
 | `guide.json` | - | - | 12セクション |
 
-`towns.json` / `terms.json` / `items.json` の各エントリは `{ id, en, ja }` の形式です（型定義は `src/types.ts`）。
+`towns.json` / `terms.json` / `items.json` / `pokemon.json` の各エントリは `{ id, en, ja }` の形式です（型定義は `src/types.ts`）。`pokemon.json` は Echo に登場するポケモンの英語名・日本語名の対応表です。
 
 ## 技術スタック
 
