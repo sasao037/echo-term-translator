@@ -159,6 +159,8 @@ function renderResults(results: SearchResult[], query: string) {
     .join("");
 }
 
+let pokemonNameById = new Map<number, { en: string; ja: string }>();
+
 const STAT_LABELS: Record<keyof PokemonDetail["stats"], string> = {
   hp: "HP",
   attack: "こうげき",
@@ -206,11 +208,46 @@ function renderPokemonBody(en: string, ja: string, detail: PokemonDetail | undef
   const abilities = detail.abilities
     .map(
       (a) =>
-        `<span class="ability-chip${a.isHidden ? " ability-chip-hidden" : ""}">${escapeHtml(a.ja)}${
-          a.isHidden ? "（隠れ特性）" : ""
+        `<span class="ability-chip${a.isHidden ? " ability-chip-hidden" : ""}">${escapeHtml(a.ja)}（${escapeHtml(a.en)}）${
+          a.isHidden ? "・隠れ特性" : ""
         }</span>`,
     )
     .join("");
+
+  const renderEvoRef = (ref: { id: number | null; condition: string }) => {
+    const name = ref.id !== null ? pokemonNameById.get(ref.id) : undefined;
+    const label = name
+      ? `<span class="term-en">${escapeHtml(name.en)}</span> <span class="term-ja">${escapeHtml(name.ja)}</span>`
+      : "？？？";
+    const clickable = name && ref.id !== null;
+    return `
+      <li class="evo-item${clickable ? " evo-item-clickable" : ""}"${
+        clickable ? ` data-evo-id="${ref.id}"` : ""
+      }>
+        <span class="evo-name">${label}</span>
+        <span class="evo-condition">${escapeHtml(ref.condition)}</span>
+      </li>
+    `;
+  };
+
+  const evolutionSection =
+    detail.evolvesFrom || detail.evolvesTo.length
+      ? `
+        <div class="modal-section">
+          <h3 class="modal-section-title">進化</h3>
+          ${
+            detail.evolvesFrom
+              ? `<p class="evo-label">進化前</p><ul class="evo-list">${renderEvoRef(detail.evolvesFrom)}</ul>`
+              : ""
+          }
+          ${
+            detail.evolvesTo.length
+              ? `<p class="evo-label">進化後</p><ul class="evo-list">${detail.evolvesTo.map(renderEvoRef).join("")}</ul>`
+              : ""
+          }
+        </div>
+      `
+      : "";
 
   const moves = detail.moves
     .map(
@@ -244,6 +281,7 @@ function renderPokemonBody(en: string, ja: string, detail: PokemonDetail | undef
         <tbody>${moves}</tbody>
       </table>
     </div>
+    ${evolutionSection}
   `;
 }
 
@@ -280,6 +318,12 @@ resultsEl.addEventListener("click", (e) => {
 modalClose.addEventListener("click", closeModal);
 pokemonModal.addEventListener("click", (e) => {
   if (e.target === pokemonModal) closeModal();
+  const evoItem = (e.target as HTMLElement).closest<HTMLLIElement>(".evo-item-clickable");
+  if (evoItem) {
+    const id = Number(evoItem.dataset.evoId);
+    const name = pokemonNameById.get(id);
+    if (name) openPokemonModal(id, name.en, name.ja);
+  }
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !pokemonModal.hidden) closeModal();
@@ -290,6 +334,9 @@ let debounceTimer: number | undefined;
 async function initSearch() {
   try {
     const index = await loadIndex();
+    pokemonNameById = new Map(
+      index.filter((r) => r.category === "pokemon").map((r) => [r.id, { en: r.en, ja: r.ja }]),
+    );
     input.disabled = false;
     statusEl.textContent = `${index.length.toLocaleString()} 件の用語を検索できます。入力を始めてください。`;
 

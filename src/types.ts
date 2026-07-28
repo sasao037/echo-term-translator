@@ -46,10 +46,17 @@ export interface PokemonMove extends LocalizedName {
   level: number;
 }
 
+export interface EvolutionRef {
+  id: number | null;
+  condition: string;
+}
+
 export interface PokemonDetail {
   id: number;
   types: LocalizedName[];
   stats: PokemonStats;
   abilities: PokemonAbility[];
   moves: PokemonMove[];
+  evolvesFrom: EvolutionRef | null;
+  evolvesTo: EvolutionRef[];
 }
