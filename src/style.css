@@ -75,6 +75,10 @@ body {
   color: var(--color-accent);
 }
 
+.main[hidden] {
+  display: none;
+}
+
 .main {
   flex: 1;
   display: flex;
