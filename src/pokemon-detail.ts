@@ -1,0 +1,20 @@
+import type { PokemonDetail } from "./types";
+
+let details: Map<number, PokemonDetail> | null = null;
+let loading: Promise<Map<number, PokemonDetail>> | null = null;
+
+async function fetchDetails(): Promise<Map<number, PokemonDetail>> {
+  const res = await fetch(`${import.meta.env.BASE_URL}data/pokemon-detail.json`);
+  if (!res.ok) {
+    throw new Error(`Failed to load pokemon-detail.json: ${res.status}`);
+  }
+  const data: PokemonDetail[] = await res.json();
+  return new Map(data.map((d) => [d.id, d]));
+}
+
+export async function getPokemonDetail(id: number): Promise<PokemonDetail | undefined> {
+  if (details) return details.get(id);
+  if (!loading) loading = fetchDetails();
+  details = await loading;
+  return details.get(id);
+}

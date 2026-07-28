@@ -2,8 +2,10 @@ import "./style.css";
 import { loadGuide, renderGuideBody } from "./guide";
 import { escapeHtml } from "./html";
 import { addHistoryEntry, clearHistory, loadHistory } from "./history";
+import { getPokemonDetail } from "./pokemon-detail";
 import { loadIndex, search } from "./search";
-import { CATEGORY_LABELS, type SearchResult } from "./types";
+import { typeColor } from "./type-colors";
+import { CATEGORY_LABELS, type PokemonDetail, type SearchResult } from "./types";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -46,6 +48,13 @@ app.innerHTML = `
         掲載データは有志による調査・翻訳に基づいています。
       </p>
     </footer>
+  </div>
+
+  <div id="pokemon-modal" class="modal-overlay" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <button type="button" id="modal-close" class="modal-close" aria-label="閉じる">×</button>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
   </div>
 `;
 
@@ -111,6 +120,8 @@ historyEl.addEventListener("click", (e) => {
   }
 });
 
+let lastPokemonResults = new Map<number, SearchResult>();
+
 function renderResults(results: SearchResult[], query: string) {
   if (!query.trim()) {
     resultsEl.innerHTML = "";
@@ -126,20 +137,153 @@ function renderResults(results: SearchResult[], query: string) {
     return;
   }
 
+  lastPokemonResults = new Map(
+    results.filter((r) => r.category === "pokemon").map((r) => [r.id, r]),
+  );
+
   statusEl.hidden = true;
   resultsEl.innerHTML = results
-    .map(
-      (r) => `
-        <li class="result-item">
+    .map((r) => {
+      const clickable = r.category === "pokemon";
+      return `
+        <li class="result-item${clickable ? " result-item-clickable" : ""}"${
+          clickable ? ` data-pokemon-id="${r.id}"` : ""
+        }>
           <span class="badge badge-${r.category}">${CATEGORY_LABELS[r.category]}</span>
           <span class="term-en">${escapeHtml(r.en)}</span>
           <span class="term-arrow">→</span>
           <span class="term-ja">${escapeHtml(r.ja)}</span>
         </li>
+      `;
+    })
+    .join("");
+}
+
+const STAT_LABELS: Record<keyof PokemonDetail["stats"], string> = {
+  hp: "HP",
+  attack: "こうげき",
+  defense: "ぼうぎょ",
+  specialAttack: "とくこう",
+  specialDefense: "とくぼう",
+  speed: "すばやさ",
+};
+const STAT_MAX = 200;
+
+function renderPokemonBody(en: string, ja: string, detail: PokemonDetail | undefined): string {
+  const title = `
+    <h2 class="modal-title">
+      <span class="term-en">${escapeHtml(en)}</span>
+      <span class="term-arrow">→</span>
+      <span class="term-ja">${escapeHtml(ja)}</span>
+    </h2>
+  `;
+
+  if (!detail) {
+    return `${title}<p class="status">読み込み中...</p>`;
+  }
+
+  const types = detail.types
+    .map(
+      (t) =>
+        `<span class="type-badge" style="background:${typeColor(t.en)}">${escapeHtml(t.ja)}</span>`,
+    )
+    .join("");
+
+  const stats = (Object.keys(STAT_LABELS) as (keyof PokemonDetail["stats"])[])
+    .map((key) => {
+      const value = detail.stats[key];
+      const pct = Math.min(100, Math.round((value / STAT_MAX) * 100));
+      return `
+        <div class="stat-row">
+          <span class="stat-label">${STAT_LABELS[key]}</span>
+          <span class="stat-bar-track"><span class="stat-bar-fill" style="width:${pct}%"></span></span>
+          <span class="stat-value">${value}</span>
+        </div>
+      `;
+    })
+    .join("");
+
+  const abilities = detail.abilities
+    .map(
+      (a) =>
+        `<span class="ability-chip${a.isHidden ? " ability-chip-hidden" : ""}">${escapeHtml(a.ja)}${
+          a.isHidden ? "（隠れ特性）" : ""
+        }</span>`,
+    )
+    .join("");
+
+  const moves = detail.moves
+    .map(
+      (m) => `
+        <tr>
+          <td>${m.level === 0 ? "-" : `Lv.${m.level}`}</td>
+          <td>${escapeHtml(m.ja)}</td>
+          <td>${escapeHtml(m.en)}</td>
+        </tr>
       `,
     )
     .join("");
+
+  return `
+    ${title}
+    <div class="modal-section">
+      <div class="type-badges">${types}</div>
+    </div>
+    <div class="modal-section">
+      <h3 class="modal-section-title">種族値</h3>
+      <div class="stat-list">${stats}</div>
+    </div>
+    <div class="modal-section">
+      <h3 class="modal-section-title">特性</h3>
+      <div class="ability-list">${abilities}</div>
+    </div>
+    <div class="modal-section">
+      <h3 class="modal-section-title">レベルアップで覚える技</h3>
+      <table class="move-table">
+        <thead><tr><th>Lv</th><th>技名</th><th>English</th></tr></thead>
+        <tbody>${moves}</tbody>
+      </table>
+    </div>
+  `;
 }
+
+const pokemonModal = document.querySelector<HTMLDivElement>("#pokemon-modal")!;
+const modalBody = document.querySelector<HTMLDivElement>("#modal-body")!;
+const modalClose = document.querySelector<HTMLButtonElement>("#modal-close")!;
+
+function closeModal() {
+  pokemonModal.hidden = true;
+  modalBody.innerHTML = "";
+}
+
+async function openPokemonModal(id: number, en: string, ja: string) {
+  pokemonModal.hidden = false;
+  modalBody.innerHTML = renderPokemonBody(en, ja, undefined);
+  try {
+    const detail = await getPokemonDetail(id);
+    modalBody.innerHTML = renderPokemonBody(en, ja, detail);
+  } catch (err) {
+    console.error(err);
+    modalBody.innerHTML = `${modalBody.innerHTML}<p class="status">詳細データの読み込みに失敗しました。</p>`;
+  }
+}
+
+resultsEl.addEventListener("click", (e) => {
+  const item = (e.target as HTMLElement).closest<HTMLLIElement>(".result-item-clickable");
+  if (!item) return;
+  const id = Number(item.dataset.pokemonId);
+  const result = lastPokemonResults.get(id);
+  if (!result) return;
+  openPokemonModal(id, result.en, result.ja);
+});
+
+modalClose.addEventListener("click", closeModal);
+pokemonModal.addEventListener("click", (e) => {
+  if (e.target === pokemonModal) closeModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !pokemonModal.hidden) closeModal();
+});
 
 let debounceTimer: number | undefined;
 

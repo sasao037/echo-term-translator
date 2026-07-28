@@ -23,3 +23,33 @@ export interface GuideSection {
   titleJa: string;
   body: string;
 }
+
+export interface LocalizedName {
+  en: string;
+  ja: string;
+}
+
+export interface PokemonStats {
+  hp: number;
+  attack: number;
+  defense: number;
+  specialAttack: number;
+  specialDefense: number;
+  speed: number;
+}
+
+export interface PokemonAbility extends LocalizedName {
+  isHidden: boolean;
+}
+
+export interface PokemonMove extends LocalizedName {
+  level: number;
+}
+
+export interface PokemonDetail {
+  id: number;
+  types: LocalizedName[];
+  stats: PokemonStats;
+  abilities: PokemonAbility[];
+  moves: PokemonMove[];
+}
