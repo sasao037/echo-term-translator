@@ -12,9 +12,14 @@ async function fetchDetails(): Promise<Map<number, PokemonDetail>> {
   return new Map(data.map((d) => [d.id, d]));
 }
 
-export async function getPokemonDetail(id: number): Promise<PokemonDetail | undefined> {
-  if (details) return details.get(id);
+export async function loadPokemonDetails(): Promise<Map<number, PokemonDetail>> {
+  if (details) return details;
   if (!loading) loading = fetchDetails();
   details = await loading;
-  return details.get(id);
+  return details;
+}
+
+export async function getPokemonDetail(id: number): Promise<PokemonDetail | undefined> {
+  const map = await loadPokemonDetails();
+  return map.get(id);
 }

@@ -2,10 +2,10 @@ import "./style.css";
 import { loadGuide, renderGuideBody } from "./guide";
 import { escapeHtml } from "./html";
 import { addHistoryEntry, clearHistory, loadHistory } from "./history";
-import { getPokemonDetail } from "./pokemon-detail";
+import { getPokemonDetail, loadPokemonDetails } from "./pokemon-detail";
 import { loadIndex, search } from "./search";
 import { typeColor } from "./type-colors";
-import { CATEGORY_LABELS, type PokemonDetail, type SearchResult } from "./types";
+import { CATEGORY_LABELS, type PokemonDetail, type SearchResult, type TermEntry } from "./types";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -38,6 +38,14 @@ app.innerHTML = `
     <main class="main" id="panel-guide" hidden>
       <p id="guide-status" class="status">読み込み中...</p>
       <div id="guide-list" class="guide-list"></div>
+
+      <details class="guide-section">
+        <summary class="guide-title">ポケモン図鑑</summary>
+        <div id="pokedex-body" class="guide-body">
+          <p id="pokedex-status" class="status">開くと読み込まれます...</p>
+          <div id="pokedex-grid" class="pokedex-grid"></div>
+        </div>
+      </details>
     </main>
 
     <footer class="footer">
@@ -388,6 +396,60 @@ async function initGuide() {
       "攻略情報の読み込みに失敗しました。ページを再読み込みしてください。";
   }
 }
+
+const pokedexDetails = document.querySelector<HTMLDetailsElement>("#panel-guide > .guide-section")!;
+const pokedexStatusEl = document.querySelector<HTMLParagraphElement>("#pokedex-status")!;
+const pokedexGridEl = document.querySelector<HTMLDivElement>("#pokedex-grid")!;
+
+let pokedexLoaded = false;
+
+async function initPokedex() {
+  if (pokedexLoaded) return;
+  pokedexLoaded = true;
+  try {
+    const [listRes, details] = await Promise.all([
+      fetch(`${import.meta.env.BASE_URL}data/pokemon.json`),
+      loadPokemonDetails(),
+    ]);
+    if (!listRes.ok) throw new Error(`Failed to load pokemon.json: ${listRes.status}`);
+    const list: TermEntry[] = await listRes.json();
+
+    for (const entry of list) {
+      const detail = details.get(entry.id);
+      pokemonNameById.set(entry.id, { en: entry.en, ja: entry.ja });
+      const types = (detail?.types ?? [])
+        .map((t) => `<span class="type-badge pokedex-badge" style="background:${typeColor(t.en)}">${escapeHtml(t.ja)}</span>`)
+        .join("");
+      const card = document.createElement("div");
+      card.className = "pokedex-card";
+      card.dataset.pokemonId = String(entry.id);
+      card.innerHTML = `
+        <span class="pokedex-no">No.${String(entry.id).padStart(3, "0")}</span>
+        <span class="pokedex-en">${escapeHtml(entry.en)}</span>
+        <span class="pokedex-ja">${escapeHtml(entry.ja)}</span>
+        <span class="pokedex-types">${types}</span>
+      `;
+      pokedexGridEl.appendChild(card);
+    }
+    pokedexStatusEl.hidden = true;
+  } catch (err) {
+    console.error(err);
+    pokedexLoaded = false;
+    pokedexStatusEl.textContent = "図鑑の読み込みに失敗しました。もう一度開いてください。";
+  }
+}
+
+pokedexGridEl.addEventListener("click", (e) => {
+  const card = (e.target as HTMLElement).closest<HTMLDivElement>(".pokedex-card");
+  if (!card) return;
+  const id = Number(card.dataset.pokemonId);
+  const name = pokemonNameById.get(id);
+  if (name) openPokemonModal(id, name.en, name.ja);
+});
+
+pokedexDetails.addEventListener("toggle", () => {
+  if (pokedexDetails.open) initPokedex();
+});
 
 initSearch();
 initGuide();
