@@ -1,0 +1,24 @@
+export type Category = "town" | "term" | "item";
+
+export interface TermEntry {
+  id: number;
+  en: string;
+  ja: string;
+}
+
+export interface SearchResult extends TermEntry {
+  category: Category;
+}
+
+export const CATEGORY_LABELS: Record<Category, string> = {
+  town: "まち",
+  term: "用語",
+  item: "どうぐ",
+};
+
+export interface GuideSection {
+  id: string;
+  titleEn: string;
+  titleJa: string;
+  body: string;
+}

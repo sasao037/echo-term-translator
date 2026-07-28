@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "en": "Pokemon",
+    "ja": "ポケモン"
+  },
+  {
+    "id": 2,
+    "en": "Pokedex",
+    "ja": "ポケモン図鑑"
+  },
+  {
+    "id": 3,
+    "en": "Trainer",
+    "ja": "トレーナー"
+  },
+  {
+    "id": 4,
+    "en": "Pokemon Center",
+    "ja": "ポケモンセンター"
+  },
+  {
+    "id": 5,
+    "en": "Gym Leader",
+    "ja": "ジムリーダー"
+  },
+  {
+    "id": 6,
+    "en": "Gym",
+    "ja": "ジム"
+  },
+  {
+    "id": 7,
+    "en": "Poke Ball",
+    "ja": "モンスターボール"
+  },
+  {
+    "id": 8,
+    "en": "Potion",
+    "ja": "きずぐすり"
+  },
+  {
+    "id": 9,
+    "en": "Berry",
+    "ja": "きのみ"
+  },
+  {
+    "id": 10,
+    "en": "Elite Four",
+    "ja": "四天王"
+  },
+  {
+    "id": 11,
+    "en": "Champion",
+    "ja": "チャンピオン"
+  },
+  {
+    "id": 12,
+    "en": "Professor",
+    "ja": "博士"
+  },
+  {
+    "id": 13,
+    "en": "Move",
+    "ja": "わざ"
+  },
+  {
+    "id": 14,
+    "en": "Ability",
+    "ja": "とくせい"
+  },
+  {
+    "id": 15,
+    "en": "Item",
+    "ja": "どうぐ"
+  },
+  {
+    "id": 16,
+    "en": "Evolution",
+    "ja": "進化"
+  },
+  {
+    "id": 17,
+    "en": "Wild Pokemon",
+    "ja": "野生のポケモン"
+  },
+  {
+    "id": 18,
+    "en": "Nature",
+    "ja": "せいかく"
+  },
+  {
+    "id": 19,
+    "en": "Egg",
+    "ja": "タマゴ"
+  },
+  {
+    "id": 20,
+    "en": "Shiny",
+    "ja": "色違い"
+  },
+  {
+    "id": 21,
+    "en": "Legendary",
+    "ja": "伝説の"
+  },
+  {
+    "id": 22,
+    "en": "Mythical",
+    "ja": "幻の"
+  },
+  {
+    "id": 23,
+    "en": "Pokemon League",
+    "ja": "ポケモンリーグ"
+  },
+  {
+    "id": 24,
+    "en": "Badge",
+    "ja": "バッジ"
+  },
+  {
+    "id": 25,
+    "en": "TM",
+    "ja": "わざマシン"
+  },
+  {
+    "id": 26,
+    "en": "Fossil",
+    "ja": "化石"
+  },
+  {
+    "id": 27,
+    "en": "Dex",
+    "ja": "ポケモン図鑑"
+  },
+  {
+    "id": 28,
+    "en": "Monster",
+    "ja": "ポケモン"
+  }
+]

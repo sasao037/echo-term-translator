@@ -1,0 +1,152 @@
+[
+  {
+    "id": 1,
+    "en": "Southern Coastlands",
+    "ja": "みなみの海岸地帯"
+  },
+  {
+    "id": 2,
+    "en": "Sunken Sanctum",
+    "ja": "沈んだ聖域"
+  },
+  {
+    "id": 3,
+    "en": "Cruciburg City",
+    "ja": "クルシバーグシティ"
+  },
+  {
+    "id": 4,
+    "en": "Old Mine #1",
+    "ja": "旧鉱山1号"
+  },
+  {
+    "id": 5,
+    "en": "Western Coastlands",
+    "ja": "にしの海岸地帯"
+  },
+  {
+    "id": 6,
+    "en": "Central Wetlands",
+    "ja": "中央湿地帯"
+  },
+  {
+    "id": 7,
+    "en": "Power Plant",
+    "ja": "発電所"
+  },
+  {
+    "id": 8,
+    "en": "Upper Wetlands",
+    "ja": "上部湿地帯"
+  },
+  {
+    "id": 9,
+    "en": "Dunes of Prosperity",
+    "ja": "繁栄の砂丘"
+  },
+  {
+    "id": 10,
+    "en": "Wayward Woods",
+    "ja": "迷いの森"
+  },
+  {
+    "id": 11,
+    "en": "Encased Grove",
+    "ja": "閉ざされた木立"
+  },
+  {
+    "id": 12,
+    "en": "Miner's Underpass",
+    "ja": "採掘者の地下道"
+  },
+  {
+    "id": 13,
+    "en": "Old Mine #2",
+    "ja": "旧鉱山2号"
+  },
+  {
+    "id": 14,
+    "en": "Old Mercatura",
+    "ja": "旧メルカトゥーラ"
+  },
+  {
+    "id": 15,
+    "en": "Baycliff Passage",
+    "ja": "入江崖の通り道"
+  },
+  {
+    "id": 16,
+    "en": "Digwig Cavern (Flow)",
+    "ja": "ディグウィグ洞窟（満潮）"
+  },
+  {
+    "id": 17,
+    "en": "Digwig Cavern (Ebb)",
+    "ja": "ディグウィグ洞窟（干潮）"
+  },
+  {
+    "id": 18,
+    "en": "Skies of Naisan",
+    "ja": "ナイサンの空"
+  },
+  {
+    "id": 19,
+    "en": "Kindred Bay",
+    "ja": "同胞の入江"
+  },
+  {
+    "id": 20,
+    "en": "Southern Seaway",
+    "ja": "南の海路"
+  },
+  {
+    "id": 21,
+    "en": "Dafodive Seastrip",
+    "ja": "ダフォダイブ海峡"
+  },
+  {
+    "id": 22,
+    "en": "Western Sea",
+    "ja": "西の海"
+  },
+  {
+    "id": 23,
+    "en": "Beguile Island",
+    "ja": "魅惑の島"
+  },
+  {
+    "id": 24,
+    "en": "Canopy Isle",
+    "ja": "キャノピー島"
+  },
+  {
+    "id": 25,
+    "en": "Canopy Island",
+    "ja": "キャノピー島"
+  },
+  {
+    "id": 26,
+    "en": "Under the Western Sea",
+    "ja": "西の海の底"
+  },
+  {
+    "id": 27,
+    "en": "Under the Southern Seaway",
+    "ja": "南の海路の底"
+  },
+  {
+    "id": 28,
+    "en": "Under Dafodive Seastrip",
+    "ja": "ダフォダイブ海峡の底"
+  },
+  {
+    "id": 29,
+    "en": "Under Kindred Bay",
+    "ja": "同胞の入江の底"
+  },
+  {
+    "id": 30,
+    "en": "Abandoned Royal Mine",
+    "ja": "見捨てられた王家の鉱山"
+  }
+]
