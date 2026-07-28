@@ -11,7 +11,7 @@ export interface SearchResult extends TermEntry {
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {
-  town: "まち",
+  town: "地名",
   term: "用語",
   item: "どうぐ",
 };

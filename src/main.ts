@@ -11,7 +11,7 @@ app.innerHTML = `
   <div class="page">
     <header class="header">
       <h1>Pokémon Echo 用語辞典</h1>
-      <p class="subtitle">英語 ⇔ 日本語 用語検索（まち・用語）＋ 攻略情報</p>
+      <p class="subtitle">英語 ⇔ 日本語 用語検索（地名・用語）＋ 攻略情報</p>
     </header>
 
     <nav class="tabs">
