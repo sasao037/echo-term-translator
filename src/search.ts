@@ -1,10 +1,10 @@
 import type { Category, SearchResult, TermEntry } from "./types";
 
 const DATA_FILES: Record<Category, string> = {
-  town: "data/towns.json",
-  term: "data/terms.json",
-  item: "data/items.json",
-  pokemon: "data/pokemon.json",
+  town: "/api/data/towns",
+  term: "/api/data/terms",
+  item: "/api/data/items",
+  pokemon: "/api/data/pokemon",
 };
 
 let index: SearchResult[] | null = null;
@@ -21,7 +21,7 @@ export async function loadIndex(): Promise<SearchResult[]> {
   const entries = await Promise.all(
     (Object.entries(DATA_FILES) as [Category, string][]).map(
       async ([category, path]) => {
-        const res = await fetch(`${import.meta.env.BASE_URL}${path}`);
+        const res = await fetch(path);
         if (!res.ok) {
           throw new Error(`Failed to load ${path}: ${res.status}`);
         }

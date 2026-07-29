@@ -5,3 +5,4 @@ dist
 *.tsbuildinfo
 .claude/settings.local.json
 .wrangler
+.dev.vars

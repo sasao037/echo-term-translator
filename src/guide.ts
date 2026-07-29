@@ -6,9 +6,9 @@ let sections: GuideSection[] | null = null;
 export async function loadGuide(): Promise<GuideSection[]> {
   if (sections) return sections;
 
-  const res = await fetch(`${import.meta.env.BASE_URL}data/guide.json`);
+  const res = await fetch("/api/data/guide");
   if (!res.ok) {
-    throw new Error(`Failed to load guide.json: ${res.status}`);
+    throw new Error(`Failed to load guide data: ${res.status}`);
   }
   sections = await res.json();
   return sections!;

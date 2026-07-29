@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck:worker": "tsc --noEmit -p worker/tsconfig.json",
+    "worker:dev": "wrangler dev"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260729.1",
     "typescript": "~5.7.2",
     "vite": "^6.0.5",
     "wrangler": "^4.114.0"

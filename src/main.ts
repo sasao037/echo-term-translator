@@ -415,10 +415,10 @@ async function initPokedex() {
   pokedexLoaded = true;
   try {
     const [listRes, details] = await Promise.all([
-      fetch(`${import.meta.env.BASE_URL}data/pokemon.json`),
+      fetch("/api/data/pokemon"),
       loadPokemonDetails(),
     ]);
-    if (!listRes.ok) throw new Error(`Failed to load pokemon.json: ${listRes.status}`);
+    if (!listRes.ok) throw new Error(`Failed to load pokemon data: ${listRes.status}`);
     const list: TermEntry[] = await listRes.json();
 
     for (const entry of list) {
