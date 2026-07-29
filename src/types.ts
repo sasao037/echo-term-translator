@@ -48,6 +48,9 @@ export interface PokemonMove extends LocalizedName {
 
 export interface EvolutionRef {
   id: number | null;
+  /** Display name shown when `id` is null (the linked Pokemon isn't in pokemon.json yet). */
+  en?: string;
+  ja?: string;
   condition: string;
 }
 

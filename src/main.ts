@@ -5,7 +5,13 @@ import { addHistoryEntry, clearHistory, loadHistory } from "./history";
 import { getPokemonDetail, loadPokemonDetails } from "./pokemon-detail";
 import { loadIndex, search } from "./search";
 import { typeColor } from "./type-colors";
-import { CATEGORY_LABELS, type PokemonDetail, type SearchResult, type TermEntry } from "./types";
+import {
+  CATEGORY_LABELS,
+  type EvolutionRef,
+  type PokemonDetail,
+  type SearchResult,
+  type TermEntry,
+} from "./types";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -222,12 +228,13 @@ function renderPokemonBody(en: string, ja: string, detail: PokemonDetail | undef
     )
     .join("");
 
-  const renderEvoRef = (ref: { id: number | null; condition: string }) => {
-    const name = ref.id !== null ? pokemonNameById.get(ref.id) : undefined;
+  const renderEvoRef = (ref: EvolutionRef) => {
+    const linked = ref.id !== null ? pokemonNameById.get(ref.id) : undefined;
+    const name = linked ?? (ref.en && ref.ja ? { en: ref.en, ja: ref.ja } : undefined);
     const label = name
       ? `<span class="term-en">${escapeHtml(name.en)}</span> <span class="term-ja">${escapeHtml(name.ja)}</span>`
       : "？？？";
-    const clickable = name && ref.id !== null;
+    const clickable = !!linked && ref.id !== null;
     return `
       <li class="evo-item${clickable ? " evo-item-clickable" : ""}"${
         clickable ? ` data-evo-id="${ref.id}"` : ""

@@ -42,6 +42,64 @@ Pokémon Echoの制作者、株式会社ポケモン、任天堂、Game Freakと
 
 **データの出所について:** `pokemon.json` / `pokemon-detail.json` は、[PokeAPI](https://pokeapi.co/) の公式データ（タイプ・種族値・特性・レベルアップ技・進化条件）を基に生成しています。Echo が独自に変更している箇所（タイプ・ステータス・技構成・進化条件の改変など）は反映されていない場合があります。差分に気づいた場合は該当ポケモンだけ個別に修正する運用です。
 
+## データのメンテナンス
+
+### ポケモンリストの更新（追加・修正）
+
+`scripts/add-pokemon.mjs` で、実在のポケモン1匹分を [PokeAPI](https://pokeapi.co/) から取得して `public/data/pokemon.json` と `public/data/pokemon-detail.json` に追加・上書きできます。
+
+```bash
+# まず内容を確認（ファイルには書き込まれない）
+node scripts/add-pokemon.mjs charizard --dry-run
+
+# 追加（idは既存の最大値+1が自動採番される）
+node scripts/add-pokemon.mjs charizard
+
+# 日本語名が正しく取れない/上書きしたい場合
+node scripts/add-pokemon.mjs charizard --ja "リザードン"
+
+# 既存エントリの更新（同じ id を明示すると上書きされる）
+node scripts/add-pokemon.mjs charizard --id 4
+```
+
+- `<pokeapi-slug>` は PokeAPI 上の識別子です。`https://pokeapi.co/api/v2/pokemon/<slug>` でそのポケモンのデータが見られる名前を指定してください（例: `charizard`、アローラ・ヒスイなどのフォームは `geodude-alola` / `lilligant-hisui` のように地方名サフィックス付き）。
+- タイプ・種族値・特性・レベルアップ技・進化情報（進化前後の条件テキスト）をまとめて生成します。進化前後の相手が既にリスト内にいれば自動でリンク（相手側の進化情報も双方向に更新）、いなければ名前だけ表示され、後で追加すれば自動でリンクされます。
+- 生成されるのは本家ポケモンのデータです。**Echo 側で変更されている場合は生成後に該当ファイルを手動で直してください**（差分修正の運用は変わりません）。
+- Echo オリジナル（本家に存在しない）ポケモンは PokeAPI から取得できないため、`public/data/pokemon.json` と `public/data/pokemon-detail.json` に直接エントリを追記してください。型定義（`src/types.ts` の `TermEntry` / `PokemonDetail`）に沿った最小構成の例:
+
+  ```json
+  // pokemon.json に追記
+  { "id": 221, "en": "Example", "ja": "サンプル" }
+  ```
+  ```json
+  // pokemon-detail.json に追記
+  {
+    "id": 221,
+    "types": [{ "en": "Normal", "ja": "ノーマル" }],
+    "stats": { "hp": 50, "attack": 50, "defense": 50, "specialAttack": 50, "specialDefense": 50, "speed": 50 },
+    "abilities": [{ "en": "Example Ability", "ja": "サンプルとくせい", "isHidden": false }],
+    "moves": [{ "level": 1, "en": "Tackle", "ja": "たいあたり" }],
+    "evolvesFrom": null,
+    "evolvesTo": []
+  }
+  ```
+
+### 攻略情報の編集・追記
+
+`public/data/guide.json` は `{ id, titleEn, titleJa, body }` の配列です。セクションを追加するには、この形式のオブジェクトを配列に追記するだけです（`id` は他と重複しない文字列であれば何でも構いません）。
+
+`body` は素朴なMarkdown風記法のプレーンテキストで、`src/guide.ts` の `renderGuideBody` がレンダリングします。空行区切りのブロックごとに以下のルールが適用されます。
+
+| 記法 | 結果 |
+| --- | --- |
+| ブロック先頭が `■見出し` | `<h4>` 見出し（見出し行の続きは通常どおりレンダリング） |
+| ブロック先頭が `\|` | Markdown風テーブル。1行目が見出し行（例: `\|英語\|日本語\|`） |
+| ブロック内の全行が `- ` で始まる | 箇条書き。半角スペース4つ以上のインデントで一段ネスト |
+| それ以外 | 段落。行と行の間は `<br>` で連結 |
+| `**太字**` / `*斜体*` | インライン装飾（上記どのブロック内でも使用可） |
+
+編集後は `npm run dev` でプレビューして表示崩れがないか確認してください。
+
 ## 技術スタック
 
 - TypeScript + Vite（フレームワーク非依存のバニラDOM実装）
