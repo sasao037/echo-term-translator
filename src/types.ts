@@ -83,4 +83,13 @@ export interface Report {
   message: string;
   createdAt: string;
   status: "open" | "resolved";
+  published: boolean;
+  /** Admin-edited text shown publicly when `published` is true. */
+  publicNote: string;
+}
+
+export interface PublishedNote {
+  pokemonId: number;
+  category: ReportCategory;
+  publicNote: string;
 }

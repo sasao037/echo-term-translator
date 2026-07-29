@@ -1,7 +1,13 @@
 import { checkPassword, clearSessionCookie, createSessionCookie, isAuthenticated } from "./auth";
 import { isDataName, readData, validateData, writeData } from "./data";
 import type { Env } from "./env";
-import { handleDeleteReport, handleListReports, handleSubmitReport, handleUpdateReport } from "./reports";
+import {
+  handleDeleteReport,
+  handleListPublishedNotes,
+  handleListReports,
+  handleSubmitReport,
+  handleUpdateReport,
+} from "./reports";
 
 function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -77,6 +83,10 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
 
   if (path === "/api/reports" && request.method === "POST") {
     return handleSubmitReport(request, env);
+  }
+
+  if (path === "/api/reports/published" && request.method === "GET") {
+    return handleListPublishedNotes(env);
   }
 
   if (path === "/api/admin/reports" && request.method === "GET") {

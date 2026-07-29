@@ -3,6 +3,7 @@ import { loadGuide, renderGuideBody } from "./guide";
 import { escapeHtml } from "./html";
 import { addHistoryEntry, clearHistory, loadHistory } from "./history";
 import { getPokemonDetail, loadPokemonDetails } from "./pokemon-detail";
+import { getPublishedNotes } from "./published-notes";
 import { loadIndex, search } from "./search";
 import { typeColor } from "./type-colors";
 import {
@@ -10,6 +11,7 @@ import {
   REPORT_CATEGORY_LABELS,
   type EvolutionRef,
   type PokemonDetail,
+  type PublishedNote,
   type ReportCategory,
   type SearchResult,
   type TermEntry,
@@ -221,7 +223,33 @@ function renderReportSection(id: number, en: string, ja: string): string {
   `;
 }
 
-function renderPokemonBody(id: number, en: string, ja: string, detail: PokemonDetail | undefined): string {
+function renderPublishedNotes(notes: PublishedNote[]): string {
+  if (notes.length === 0) return "";
+  const items = notes
+    .map(
+      (n) => `
+        <li class="published-note-item">
+          <span class="published-note-category">${escapeHtml(REPORT_CATEGORY_LABELS[n.category] ?? n.category)}</span>
+          <span class="published-note-text">${escapeHtml(n.publicNote)}</span>
+        </li>
+      `,
+    )
+    .join("");
+  return `
+    <div class="modal-section">
+      <h3 class="modal-section-title">確認された仕様差分</h3>
+      <ul class="published-note-list">${items}</ul>
+    </div>
+  `;
+}
+
+function renderPokemonBody(
+  id: number,
+  en: string,
+  ja: string,
+  detail: PokemonDetail | undefined,
+  notes: PublishedNote[],
+): string {
   const title = `
     <h2 class="modal-title">
       <span class="term-en">${escapeHtml(en)}</span>
@@ -333,6 +361,7 @@ function renderPokemonBody(id: number, en: string, ja: string, detail: PokemonDe
       </table>
     </div>
     ${evolutionSection}
+    ${renderPublishedNotes(notes)}
     ${renderReportSection(id, en, ja)}
   `;
 }
@@ -348,10 +377,16 @@ function closeModal() {
 
 async function openPokemonModal(id: number, en: string, ja: string) {
   pokemonModal.hidden = false;
-  modalBody.innerHTML = renderPokemonBody(id, en, ja, undefined);
+  modalBody.innerHTML = renderPokemonBody(id, en, ja, undefined, []);
   try {
-    const detail = await getPokemonDetail(id);
-    modalBody.innerHTML = renderPokemonBody(id, en, ja, detail);
+    const [detail, notes] = await Promise.all([
+      getPokemonDetail(id),
+      getPublishedNotes(id).catch((err) => {
+        console.error(err);
+        return [];
+      }),
+    ]);
+    modalBody.innerHTML = renderPokemonBody(id, en, ja, detail, notes);
   } catch (err) {
     console.error(err);
     modalBody.innerHTML = `${modalBody.innerHTML}<p class="status">詳細データの読み込みに失敗しました。</p>`;

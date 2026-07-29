@@ -15,12 +15,15 @@ async function fetchReports(): Promise<Report[]> {
   return res.json();
 }
 
-async function updateReportStatus(id: string, status: Report["status"]): Promise<{ ok: boolean; error?: string }> {
+async function patchReport(
+  id: string,
+  patch: Partial<Pick<Report, "status" | "published" | "publicNote">>,
+): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch(`/api/admin/reports/${id}`, {
     method: "PATCH",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(patch),
   });
   const data = (await parseJson(res)) as { ok: boolean; error?: string } | null;
   return data ?? { ok: false, error: `${res.status}` };
@@ -43,28 +46,39 @@ export function mountReportsEditor(container: HTMLElement) {
   let statusKind: "ok" | "error" | "" = "";
   let showResolved = false;
 
+  function renderCard(r: Report): string {
+    return `
+      <div class="admin-report-card${r.status === "resolved" ? " admin-report-resolved" : ""}" data-id="${r.id}">
+        <div class="admin-report-meta">
+          <span class="admin-report-pokemon">${escapeHtml(r.pokemonEn)} / ${escapeHtml(r.pokemonJa)}</span>
+          <span class="admin-report-category">${escapeHtml(REPORT_CATEGORY_LABELS[r.category] ?? r.category)}</span>
+          <span class="admin-report-date">${escapeHtml(formatDate(r.createdAt))}</span>
+        </div>
+        <p class="admin-report-message">${escapeHtml(r.message)}</p>
+        <div class="admin-report-actions">
+          <button type="button" class="admin-btn" data-action="toggle-status">${
+            r.status === "open" ? "解決済みにする" : "未解決に戻す"
+          }</button>
+          <button type="button" class="admin-btn" data-action="delete">削除</button>
+        </div>
+        <div class="admin-report-publish">
+          <label class="admin-checkbox">
+            <input type="checkbox" class="admin-report-published" ${r.published ? "checked" : ""} />
+            ポケモン詳細パネルに公開ノートとして表示する
+          </label>
+          <textarea class="admin-report-note" placeholder="公開する文言（未入力なら公開されません）">${escapeHtml(
+            r.publicNote || r.message,
+          )}</textarea>
+          <button type="button" class="admin-btn" data-action="save-publish">公開設定を保存</button>
+          <span class="admin-report-publish-status"></span>
+        </div>
+      </div>
+    `;
+  }
+
   function render() {
     const visible = reports.filter((r) => showResolved || r.status === "open");
-    const rows = visible
-      .map(
-        (r) => `
-          <div class="admin-report-card${r.status === "resolved" ? " admin-report-resolved" : ""}" data-id="${r.id}">
-            <div class="admin-report-meta">
-              <span class="admin-report-pokemon">${escapeHtml(r.pokemonEn)} / ${escapeHtml(r.pokemonJa)}</span>
-              <span class="admin-report-category">${escapeHtml(REPORT_CATEGORY_LABELS[r.category] ?? r.category)}</span>
-              <span class="admin-report-date">${escapeHtml(formatDate(r.createdAt))}</span>
-            </div>
-            <p class="admin-report-message">${escapeHtml(r.message)}</p>
-            <div class="admin-report-actions">
-              <button type="button" class="admin-btn" data-action="toggle-status">${
-                r.status === "open" ? "解決済みにする" : "未解決に戻す"
-              }</button>
-              <button type="button" class="admin-btn" data-action="delete">削除</button>
-            </div>
-          </div>
-        `,
-      )
-      .join("");
+    const rows = visible.map(renderCard).join("");
 
     container.innerHTML = `
       <div class="admin-toolbar">
@@ -93,7 +107,7 @@ export function mountReportsEditor(container: HTMLElement) {
 
     if (action === "toggle-status") {
       const nextStatus = report.status === "open" ? "resolved" : "open";
-      const result = await updateReportStatus(id, nextStatus);
+      const result = await patchReport(id, { status: nextStatus });
       if (result.ok) report.status = nextStatus;
       else {
         statusText = `更新に失敗しました: ${result.error}`;
@@ -109,6 +123,19 @@ export function mountReportsEditor(container: HTMLElement) {
         statusKind = "error";
       }
       render();
+    } else if (action === "save-publish") {
+      const published = card.querySelector<HTMLInputElement>(".admin-report-published")!.checked;
+      const publicNote = card.querySelector<HTMLTextAreaElement>(".admin-report-note")!.value;
+      const publishStatusEl = card.querySelector<HTMLSpanElement>(".admin-report-publish-status")!;
+      publishStatusEl.textContent = "保存中...";
+      const result = await patchReport(id, { published, publicNote });
+      if (result.ok) {
+        report.published = published;
+        report.publicNote = publicNote.trim();
+        publishStatusEl.textContent = "保存しました。";
+      } else {
+        publishStatusEl.textContent = `失敗: ${result.error}`;
+      }
     }
   });
 

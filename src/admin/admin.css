@@ -326,3 +326,29 @@ body {
   display: flex;
   gap: 0.5rem;
 }
+
+.admin-report-publish {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-report-note {
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  min-height: 4rem;
+  resize: vertical;
+}
+
+.admin-report-publish-status {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}

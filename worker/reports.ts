@@ -12,10 +12,13 @@ export interface Report {
   message: string;
   createdAt: string;
   status: "open" | "resolved";
+  published: boolean;
+  publicNote: string;
 }
 
 const REPORTS_KEY = "reports:list";
 const MAX_MESSAGE_LENGTH = 1000;
+const MAX_PUBLIC_NOTE_LENGTH = 1000;
 const MAX_REPORTS = 2000; // hard cap so KV can't grow unbounded
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
@@ -98,6 +101,8 @@ export async function handleSubmitReport(request: Request, env: Env): Promise<Re
     message: message.trim().slice(0, MAX_MESSAGE_LENGTH),
     createdAt: new Date().toISOString(),
     status: "open",
+    published: false,
+    publicNote: "",
   };
   reports.push(report);
   // Keep only the most recent MAX_REPORTS if the cap is exceeded.
@@ -120,14 +125,29 @@ export async function handleUpdateReport(request: Request, env: Env, id: string)
   } catch {
     return json({ ok: false, error: "invalid request body" }, 400);
   }
-  const status = (body as { status?: unknown } | null)?.status;
-  if (status !== "open" && status !== "resolved") {
-    return json({ ok: false, error: "invalid status" }, 400);
-  }
+  const b = body as Record<string, unknown> | null;
+
   const reports = await getReports(env);
   const report = reports.find((r) => r.id === id);
   if (!report) return json({ ok: false, error: "not found" }, 404);
-  report.status = status;
+
+  if (b?.status !== undefined) {
+    if (b.status !== "open" && b.status !== "resolved") {
+      return json({ ok: false, error: "invalid status" }, 400);
+    }
+    report.status = b.status;
+  }
+  if (b?.published !== undefined) {
+    if (typeof b.published !== "boolean") return json({ ok: false, error: "invalid published" }, 400);
+    report.published = b.published;
+  }
+  if (b?.publicNote !== undefined) {
+    if (typeof b.publicNote !== "string" || b.publicNote.length > MAX_PUBLIC_NOTE_LENGTH) {
+      return json({ ok: false, error: "invalid publicNote" }, 400);
+    }
+    report.publicNote = b.publicNote.trim();
+  }
+
   await saveReports(env, reports);
   return json({ ok: true });
 }
@@ -137,4 +157,12 @@ export async function handleDeleteReport(env: Env, id: string): Promise<Response
   const next = reports.filter((r) => r.id !== id);
   await saveReports(env, next);
   return json({ ok: true });
+}
+
+export async function handleListPublishedNotes(env: Env): Promise<Response> {
+  const reports = await getReports(env);
+  const published = reports
+    .filter((r) => r.published && r.publicNote.trim())
+    .map((r) => ({ pokemonId: r.pokemonId, category: r.category, publicNote: r.publicNote }));
+  return json(published);
 }
