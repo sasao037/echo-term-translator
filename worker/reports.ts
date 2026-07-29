@@ -14,7 +14,12 @@ export interface Report {
   status: "open" | "resolved";
   published: boolean;
   publicNote: string;
+  likes: number;
+  dislikes: number;
 }
+
+type VoteChoice = "like" | "dislike";
+type VoteMap = Record<string, VoteChoice>;
 
 const REPORTS_KEY = "reports:list";
 const MAX_MESSAGE_LENGTH = 1000;
@@ -103,6 +108,8 @@ export async function handleSubmitReport(request: Request, env: Env): Promise<Re
     status: "open",
     published: false,
     publicNote: "",
+    likes: 0,
+    dislikes: 0,
   };
   reports.push(report);
   // Keep only the most recent MAX_REPORTS if the cap is exceeded.
@@ -159,10 +166,63 @@ export async function handleDeleteReport(env: Env, id: string): Promise<Response
   return json({ ok: true });
 }
 
-export async function handleListPublishedNotes(env: Env): Promise<Response> {
+export async function handleListPublicReports(env: Env): Promise<Response> {
   const reports = await getReports(env);
-  const published = reports
-    .filter((r) => r.published && r.publicNote.trim())
-    .map((r) => ({ pokemonId: r.pokemonId, category: r.category, publicNote: r.publicNote }));
-  return json(published);
+  const visible = reports
+    .filter((r) => r.status === "open" || r.published)
+    .map((r) => ({
+      id: r.id,
+      pokemonId: r.pokemonId,
+      category: r.category,
+      text: r.published ? r.publicNote : r.message,
+      resolved: r.status === "resolved",
+      published: r.published,
+      likes: r.likes,
+      dislikes: r.dislikes,
+    }))
+    .filter((r) => r.text.trim());
+  return json(visible);
+}
+
+function voteKey(reportId: string): string {
+  return `reports:votes:${reportId}`;
+}
+
+export async function handleVoteReport(request: Request, env: Env, id: string): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "invalid request body" }, 400);
+  }
+  const vote = (body as { vote?: unknown } | null)?.vote;
+  if (vote !== "like" && vote !== "dislike") {
+    return json({ ok: false, error: "invalid vote" }, 400);
+  }
+
+  const reports = await getReports(env);
+  const report = reports.find((r) => r.id === id);
+  if (!report) return json({ ok: false, error: "not found" }, 404);
+
+  const ip = clientIp(request);
+  const votesStored = await env.DATA_KV.get(voteKey(id));
+  const votes: VoteMap = votesStored ? JSON.parse(votesStored) : {};
+  const previous = votes[ip];
+
+  if (previous === vote) {
+    // Voting the same way again undoes it.
+    delete votes[ip];
+    if (vote === "like") report.likes = Math.max(0, report.likes - 1);
+    else report.dislikes = Math.max(0, report.dislikes - 1);
+  } else {
+    if (previous === "like") report.likes = Math.max(0, report.likes - 1);
+    else if (previous === "dislike") report.dislikes = Math.max(0, report.dislikes - 1);
+    votes[ip] = vote;
+    if (vote === "like") report.likes += 1;
+    else report.dislikes += 1;
+  }
+
+  await env.DATA_KV.put(voteKey(id), JSON.stringify(votes));
+  await saveReports(env, reports);
+  return json({ ok: true, likes: report.likes, dislikes: report.dislikes, myVote: votes[ip] ?? null });
 }

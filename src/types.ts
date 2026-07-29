@@ -86,10 +86,20 @@ export interface Report {
   published: boolean;
   /** Admin-edited text shown publicly when `published` is true. */
   publicNote: string;
+  likes: number;
+  dislikes: number;
 }
 
-export interface PublishedNote {
+export type VoteChoice = "like" | "dislike";
+
+/** Public view of a report: open (pending review) or published (curated). */
+export interface PublicReport {
+  id: string;
   pokemonId: number;
   category: ReportCategory;
-  publicNote: string;
+  text: string;
+  resolved: boolean;
+  published: boolean;
+  likes: number;
+  dislikes: number;
 }

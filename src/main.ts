@@ -3,7 +3,7 @@ import { loadGuide, renderGuideBody } from "./guide";
 import { escapeHtml } from "./html";
 import { addHistoryEntry, clearHistory, loadHistory } from "./history";
 import { getPokemonDetail, loadPokemonDetails } from "./pokemon-detail";
-import { getPublishedNotes } from "./published-notes";
+import { getMyVote, getPublicReports, setMyVote, voteReport } from "./public-reports";
 import { loadIndex, search } from "./search";
 import { typeColor } from "./type-colors";
 import {
@@ -11,7 +11,7 @@ import {
   REPORT_CATEGORY_LABELS,
   type EvolutionRef,
   type PokemonDetail,
-  type PublishedNote,
+  type PublicReport,
   type ReportCategory,
   type SearchResult,
   type TermEntry,
@@ -223,22 +223,35 @@ function renderReportSection(id: number, en: string, ja: string): string {
   `;
 }
 
-function renderPublishedNotes(notes: PublishedNote[]): string {
-  if (notes.length === 0) return "";
-  const items = notes
-    .map(
-      (n) => `
-        <li class="published-note-item">
-          <span class="published-note-category">${escapeHtml(REPORT_CATEGORY_LABELS[n.category] ?? n.category)}</span>
-          <span class="published-note-text">${escapeHtml(n.publicNote)}</span>
+function renderPublicReports(reports: PublicReport[]): string {
+  if (reports.length === 0) return "";
+  const items = reports
+    .map((r) => {
+      const myVote = getMyVote(r.id);
+      const badge = r.published
+        ? `<span class="public-report-badge public-report-badge-verified">確認済み</span>`
+        : r.resolved
+          ? `<span class="public-report-badge">対応済み</span>`
+          : `<span class="public-report-badge public-report-badge-pending">未確認</span>`;
+      return `
+        <li class="public-report-item" data-report-id="${r.id}">
+          <div class="public-report-meta">
+            <span class="public-report-category">${escapeHtml(REPORT_CATEGORY_LABELS[r.category] ?? r.category)}</span>
+            ${badge}
+          </div>
+          <p class="public-report-text">${escapeHtml(r.text)}</p>
+          <div class="public-report-votes">
+            <button type="button" class="vote-btn${myVote === "like" ? " vote-btn-active" : ""}" data-action="vote-like">👍 <span class="vote-count">${r.likes}</span></button>
+            <button type="button" class="vote-btn${myVote === "dislike" ? " vote-btn-active" : ""}" data-action="vote-dislike">👎 <span class="vote-count">${r.dislikes}</span></button>
+          </div>
         </li>
-      `,
-    )
+      `;
+    })
     .join("");
   return `
     <div class="modal-section">
-      <h3 class="modal-section-title">確認された仕様差分</h3>
-      <ul class="published-note-list">${items}</ul>
+      <h3 class="modal-section-title">みんなの報告</h3>
+      <ul class="public-report-list">${items}</ul>
     </div>
   `;
 }
@@ -248,7 +261,7 @@ function renderPokemonBody(
   en: string,
   ja: string,
   detail: PokemonDetail | undefined,
-  notes: PublishedNote[],
+  reports: PublicReport[],
 ): string {
   const title = `
     <h2 class="modal-title">
@@ -361,7 +374,7 @@ function renderPokemonBody(
       </table>
     </div>
     ${evolutionSection}
-    ${renderPublishedNotes(notes)}
+    ${renderPublicReports(reports)}
     ${renderReportSection(id, en, ja)}
   `;
 }
@@ -379,14 +392,14 @@ async function openPokemonModal(id: number, en: string, ja: string) {
   pokemonModal.hidden = false;
   modalBody.innerHTML = renderPokemonBody(id, en, ja, undefined, []);
   try {
-    const [detail, notes] = await Promise.all([
+    const [detail, publicReports] = await Promise.all([
       getPokemonDetail(id),
-      getPublishedNotes(id).catch((err) => {
+      getPublicReports(id).catch((err) => {
         console.error(err);
         return [];
       }),
     ]);
-    modalBody.innerHTML = renderPokemonBody(id, en, ja, detail, notes);
+    modalBody.innerHTML = renderPokemonBody(id, en, ja, detail, publicReports);
   } catch (err) {
     console.error(err);
     modalBody.innerHTML = `${modalBody.innerHTML}<p class="status">詳細データの読み込みに失敗しました。</p>`;
@@ -401,6 +414,24 @@ resultsEl.addEventListener("click", (e) => {
   if (!result) return;
   openPokemonModal(id, result.en, result.ja);
 });
+
+async function handleVoteClick(item: HTMLLIElement, vote: "like" | "dislike") {
+  const id = item.dataset.reportId!;
+  const likeBtn = item.querySelector<HTMLButtonElement>('[data-action="vote-like"]')!;
+  const dislikeBtn = item.querySelector<HTMLButtonElement>('[data-action="vote-dislike"]')!;
+
+  const result = await voteReport(id, vote);
+  if (!result.ok || result.likes === undefined || result.dislikes === undefined) return;
+
+  const previous = getMyVote(id);
+  const next = previous === vote ? null : vote;
+  setMyVote(id, next);
+
+  likeBtn.classList.toggle("vote-btn-active", next === "like");
+  dislikeBtn.classList.toggle("vote-btn-active", next === "dislike");
+  likeBtn.querySelector(".vote-count")!.textContent = String(result.likes);
+  dislikeBtn.querySelector(".vote-count")!.textContent = String(result.dislikes);
+}
 
 async function submitReport(form: HTMLDivElement) {
   const statusEl = form.querySelector<HTMLSpanElement>(".report-status")!;
@@ -457,14 +488,20 @@ pokemonModal.addEventListener("click", (e) => {
     return;
   }
 
-  const action = (e.target as HTMLElement).dataset.action;
+  const actionEl = (e.target as HTMLElement).closest<HTMLElement>("[data-action]");
+  const action = actionEl?.dataset.action;
   if (action === "toggle-report") {
     const form = modalBody.querySelector<HTMLDivElement>(".report-form")!;
     form.hidden = !form.hidden;
     return;
   }
   if (action === "submit-report") {
-    submitReport((e.target as HTMLElement).closest<HTMLDivElement>(".report-form")!);
+    submitReport(actionEl!.closest<HTMLDivElement>(".report-form")!);
+    return;
+  }
+  if (action === "vote-like" || action === "vote-dislike") {
+    const item = actionEl!.closest<HTMLLIElement>(".public-report-item")!;
+    handleVoteClick(item, action === "vote-like" ? "like" : "dislike");
   }
 });
 document.addEventListener("keydown", (e) => {

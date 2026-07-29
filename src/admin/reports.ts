@@ -53,6 +53,7 @@ export function mountReportsEditor(container: HTMLElement) {
           <span class="admin-report-pokemon">${escapeHtml(r.pokemonEn)} / ${escapeHtml(r.pokemonJa)}</span>
           <span class="admin-report-category">${escapeHtml(REPORT_CATEGORY_LABELS[r.category] ?? r.category)}</span>
           <span class="admin-report-date">${escapeHtml(formatDate(r.createdAt))}</span>
+          <span class="admin-report-votes">👍 ${r.likes} / 👎 ${r.dislikes}</span>
         </div>
         <p class="admin-report-message">${escapeHtml(r.message)}</p>
         <div class="admin-report-actions">

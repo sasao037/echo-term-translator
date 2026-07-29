@@ -3,10 +3,11 @@ import { isDataName, readData, validateData, writeData } from "./data";
 import type { Env } from "./env";
 import {
   handleDeleteReport,
-  handleListPublishedNotes,
+  handleListPublicReports,
   handleListReports,
   handleSubmitReport,
   handleUpdateReport,
+  handleVoteReport,
 } from "./reports";
 
 function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
@@ -85,8 +86,13 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
     return handleSubmitReport(request, env);
   }
 
-  if (path === "/api/reports/published" && request.method === "GET") {
-    return handleListPublishedNotes(env);
+  if (path === "/api/reports/public" && request.method === "GET") {
+    return handleListPublicReports(env);
+  }
+
+  const voteMatch = path.match(/^\/api\/reports\/([a-zA-Z0-9-]+)\/vote$/);
+  if (voteMatch && request.method === "POST") {
+    return handleVoteReport(request, env, voteMatch[1]);
   }
 
   if (path === "/api/admin/reports" && request.method === "GET") {
