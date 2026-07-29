@@ -2,6 +2,7 @@ import "../style.css";
 import { checkSession, login, logout } from "./api";
 import { mountGuideEditor } from "./guide";
 import { mountPokemonDetailEditor } from "./pokemon-detail";
+import { mountReportsEditor } from "./reports";
 import { mountSimpleListEditor } from "./simple-list";
 
 const app = document.querySelector<HTMLDivElement>("#admin-app")!;
@@ -9,6 +10,7 @@ const app = document.querySelector<HTMLDivElement>("#admin-app")!;
 type Tab = { key: string; label: string; mount: (el: HTMLElement) => void };
 
 const TABS: Tab[] = [
+  { key: "reports", label: "報告一覧", mount: mountReportsEditor },
   { key: "guide", label: "攻略情報", mount: mountGuideEditor },
   { key: "towns", label: "地名", mount: (el) => mountSimpleListEditor(el, "towns", "地名") },
   { key: "terms", label: "用語", mount: (el) => mountSimpleListEditor(el, "terms", "用語") },

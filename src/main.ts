@@ -7,8 +7,10 @@ import { loadIndex, search } from "./search";
 import { typeColor } from "./type-colors";
 import {
   CATEGORY_LABELS,
+  REPORT_CATEGORY_LABELS,
   type EvolutionRef,
   type PokemonDetail,
+  type ReportCategory,
   type SearchResult,
   type TermEntry,
 } from "./types";
@@ -185,7 +187,41 @@ const STAT_LABELS: Record<keyof PokemonDetail["stats"], string> = {
 };
 const STAT_MAX = 200;
 
-function renderPokemonBody(en: string, ja: string, detail: PokemonDetail | undefined): string {
+function renderReportSection(id: number, en: string, ja: string): string {
+  return `
+    <div class="modal-section">
+      <button type="button" class="report-toggle-btn" data-action="toggle-report">この情報について報告する</button>
+      <div class="report-form" hidden data-pokemon-id="${id}" data-pokemon-en="${escapeHtml(en)}" data-pokemon-ja="${escapeHtml(ja)}">
+        <label class="report-field">
+          カテゴリ
+          <select class="report-category">
+            ${Object.entries(REPORT_CATEGORY_LABELS)
+              .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
+              .join("")}
+          </select>
+        </label>
+        <label class="report-field">
+          内容（Echoでの実際の仕様、入手条件など）
+          <textarea class="report-message" maxlength="1000" placeholder="例: とくせいが〇〇になっていました"></textarea>
+        </label>
+        <input
+          type="text"
+          class="report-honeypot"
+          name="website"
+          autocomplete="off"
+          tabindex="-1"
+          aria-hidden="true"
+        />
+        <div class="report-actions">
+          <button type="button" class="report-submit-btn" data-action="submit-report">送信</button>
+          <span class="report-status"></span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPokemonBody(id: number, en: string, ja: string, detail: PokemonDetail | undefined): string {
   const title = `
     <h2 class="modal-title">
       <span class="term-en">${escapeHtml(en)}</span>
@@ -195,7 +231,7 @@ function renderPokemonBody(en: string, ja: string, detail: PokemonDetail | undef
   `;
 
   if (!detail) {
-    return `${title}<p class="status">読み込み中...</p>`;
+    return `${title}<p class="status">読み込み中...</p>${renderReportSection(id, en, ja)}`;
   }
 
   const types = detail.types
@@ -297,6 +333,7 @@ function renderPokemonBody(en: string, ja: string, detail: PokemonDetail | undef
       </table>
     </div>
     ${evolutionSection}
+    ${renderReportSection(id, en, ja)}
   `;
 }
 
@@ -311,10 +348,10 @@ function closeModal() {
 
 async function openPokemonModal(id: number, en: string, ja: string) {
   pokemonModal.hidden = false;
-  modalBody.innerHTML = renderPokemonBody(en, ja, undefined);
+  modalBody.innerHTML = renderPokemonBody(id, en, ja, undefined);
   try {
     const detail = await getPokemonDetail(id);
-    modalBody.innerHTML = renderPokemonBody(en, ja, detail);
+    modalBody.innerHTML = renderPokemonBody(id, en, ja, detail);
   } catch (err) {
     console.error(err);
     modalBody.innerHTML = `${modalBody.innerHTML}<p class="status">詳細データの読み込みに失敗しました。</p>`;
@@ -330,14 +367,69 @@ resultsEl.addEventListener("click", (e) => {
   openPokemonModal(id, result.en, result.ja);
 });
 
+async function submitReport(form: HTMLDivElement) {
+  const statusEl = form.querySelector<HTMLSpanElement>(".report-status")!;
+  const submitBtn = form.querySelector<HTMLButtonElement>(".report-submit-btn")!;
+  const messageEl = form.querySelector<HTMLTextAreaElement>(".report-message")!;
+  const categoryEl = form.querySelector<HTMLSelectElement>(".report-category")!;
+  const honeypotEl = form.querySelector<HTMLInputElement>(".report-honeypot")!;
+
+  const message = messageEl.value.trim();
+  if (!message) {
+    statusEl.textContent = "内容を入力してください。";
+    statusEl.className = "report-status report-status-error";
+    return;
+  }
+
+  submitBtn.disabled = true;
+  statusEl.textContent = "送信中...";
+  statusEl.className = "report-status";
+  try {
+    const res = await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pokemonId: Number(form.dataset.pokemonId),
+        pokemonEn: form.dataset.pokemonEn,
+        pokemonJa: form.dataset.pokemonJa,
+        category: categoryEl.value as ReportCategory,
+        message,
+        website: honeypotEl.value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error ?? `${res.status}`);
+    statusEl.textContent = "報告ありがとうございます。";
+    statusEl.className = "report-status report-status-ok";
+    messageEl.value = "";
+  } catch (err) {
+    statusEl.textContent = `送信に失敗しました: ${(err as Error).message}`;
+    statusEl.className = "report-status report-status-error";
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
 modalClose.addEventListener("click", closeModal);
 pokemonModal.addEventListener("click", (e) => {
   if (e.target === pokemonModal) closeModal();
+
   const evoItem = (e.target as HTMLElement).closest<HTMLLIElement>(".evo-item-clickable");
   if (evoItem) {
     const id = Number(evoItem.dataset.evoId);
     const name = pokemonNameById.get(id);
     if (name) openPokemonModal(id, name.en, name.ja);
+    return;
+  }
+
+  const action = (e.target as HTMLElement).dataset.action;
+  if (action === "toggle-report") {
+    const form = modalBody.querySelector<HTMLDivElement>(".report-form")!;
+    form.hidden = !form.hidden;
+    return;
+  }
+  if (action === "submit-report") {
+    submitReport((e.target as HTMLElement).closest<HTMLDivElement>(".report-form")!);
   }
 });
 document.addEventListener("keydown", (e) => {

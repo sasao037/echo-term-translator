@@ -1,6 +1,7 @@
 import { checkPassword, clearSessionCookie, createSessionCookie, isAuthenticated } from "./auth";
 import { isDataName, readData, validateData, writeData } from "./data";
 import type { Env } from "./env";
+import { handleDeleteReport, handleListReports, handleSubmitReport, handleUpdateReport } from "./reports";
 
 function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -72,6 +73,23 @@ async function handleApi(request: Request, env: Env, url: URL): Promise<Response
     const name = dataMatch[1];
     if (request.method === "GET") return handleGetData(env, name, url.origin);
     if (request.method === "PUT") return handlePutData(request, env, name);
+  }
+
+  if (path === "/api/reports" && request.method === "POST") {
+    return handleSubmitReport(request, env);
+  }
+
+  if (path === "/api/admin/reports" && request.method === "GET") {
+    if (!(await isAuthenticated(request, env.SESSION_SECRET))) return json({ error: "unauthorized" }, 401);
+    return handleListReports(env);
+  }
+
+  const reportMatch = path.match(/^\/api\/admin\/reports\/([a-zA-Z0-9-]+)$/);
+  if (reportMatch) {
+    if (!(await isAuthenticated(request, env.SESSION_SECRET))) return json({ ok: false, error: "unauthorized" }, 401);
+    const id = reportMatch[1];
+    if (request.method === "PATCH") return handleUpdateReport(request, env, id);
+    if (request.method === "DELETE") return handleDeleteReport(env, id);
   }
 
   return json({ error: "not found" }, 404);

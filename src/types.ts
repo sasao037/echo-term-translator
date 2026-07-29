@@ -63,3 +63,24 @@ export interface PokemonDetail {
   evolvesFrom: EvolutionRef | null;
   evolvesTo: EvolutionRef[];
 }
+
+export type ReportCategory = "type" | "ability" | "move" | "evolution" | "other";
+
+export const REPORT_CATEGORY_LABELS: Record<ReportCategory, string> = {
+  type: "タイプ",
+  ability: "特性",
+  move: "技",
+  evolution: "進化",
+  other: "その他",
+};
+
+export interface Report {
+  id: string;
+  pokemonId: number;
+  pokemonEn: string;
+  pokemonJa: string;
+  category: ReportCategory;
+  message: string;
+  createdAt: string;
+  status: "open" | "resolved";
+}
