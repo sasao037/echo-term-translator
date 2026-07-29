@@ -98,7 +98,19 @@ node scripts/add-pokemon.mjs charizard --id 4
 | それ以外 | 段落。行と行の間は `<br>` で連結 |
 | `**太字**` / `*斜体*` | インライン装飾（上記どのブロック内でも使用可） |
 
-編集後は `npm run dev` でプレビューして表示崩れがないか確認してください。
+編集後は `npm run dev` でプレビューして表示崩れがないか確認してください。JSONを直接編集する代わりに、下記の編集画面を使うこともできます。
+
+#### 編集画面（`editor.html`、開発専用）
+
+`npm run dev` を実行した状態でブラウザから `http://localhost:5173/editor.html` を開くと、攻略情報セクションをフォームで編集できます。
+
+- セクションの追加・削除・並び替え（↑↓）
+- `titleJa` / `titleEn` / `body` をその場で編集し、`body` は本番と同じレンダリングロジックでその場にプレビュー表示
+- 「保存」を押すと `public/data/guide.json` にそのまま書き込まれます（`vite.config.ts` の開発サーバー専用ミドルウェアが `POST /api/guide` を受けてファイルに保存）
+
+**注意:**
+- この画面と保存APIは開発サーバー（`npm run dev` / `vite`）でのみ動作します。`npm run build` の成果物（`dist/`）や `npm run preview` には含まれず、本番サイトには一切露出しません。認証もない前提のローカル専用ツールです。
+- 保存は即座にローカルの `public/data/guide.json` を上書きします。内容を確認のうえ、`git diff` → `git add` → `git commit` → `push` は自分で行ってください（このツールはコミットやpushはしません）。
 
 ## 技術スタック
 
@@ -118,6 +130,9 @@ node scripts/add-pokemon.mjs charizard --id 4
 | `type-colors.ts` | ポケモンのタイプ別バッジ色 |
 | `types.ts` | 共通の型定義とカテゴリラベル |
 | `html.ts` | HTMLエスケープ用ユーティリティ |
+| `editor.ts` / `editor.css` | 開発専用の攻略情報エディタ（`editor.html`）。本番ビルドには含まれない |
+
+`scripts/add-pokemon.mjs` はポケモンデータ取得用のメンテナンススクリプト（上記「データのメンテナンス」参照）。`vite.config.ts` には `editor.html` からの保存（`POST /api/guide`）を受ける開発サーバー専用ミドルウェアがあり、`npm run build` / `npm run preview` には影響しません。
 
 ## 開発
 
