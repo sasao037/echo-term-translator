@@ -28,9 +28,25 @@ const MAX_REPORTS = 2000; // hard cap so KV can't grow unbounded
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
 
+// Backfill fields added after some reports were already stored in KV.
+function normalize(r: Partial<Report> & Pick<Report, "id" | "pokemonId" | "category" | "message" | "createdAt">): Report {
+  return {
+    ...r,
+    status: r.status ?? "open",
+    published: r.published ?? false,
+    publicNote: r.publicNote ?? "",
+    likes: r.likes ?? 0,
+    dislikes: r.dislikes ?? 0,
+    pokemonEn: r.pokemonEn ?? "",
+    pokemonJa: r.pokemonJa ?? "",
+  };
+}
+
 async function getReports(env: Env): Promise<Report[]> {
   const stored = await env.DATA_KV.get(REPORTS_KEY);
-  return stored ? JSON.parse(stored) : [];
+  if (!stored) return [];
+  const parsed: unknown[] = JSON.parse(stored);
+  return parsed.map((r) => normalize(r as Parameters<typeof normalize>[0]));
 }
 
 async function saveReports(env: Env, reports: Report[]): Promise<void> {
