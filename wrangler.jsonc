@@ -10,8 +10,7 @@
   "kv_namespaces": [
     {
       "binding": "DATA_KV",
-      // Replace after running: npx wrangler kv namespace create DATA_KV
-      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+      "id": "bc0e13db6f634ccfb5bf076592ba25fe"
     }
   ]
 }
